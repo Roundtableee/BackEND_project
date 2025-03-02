@@ -6,7 +6,6 @@ const express = require('express');
 const cors = require('cors');
 const connectDB = require('./config/db');
 
-
 // Connect to MongoDB Atlas
 connectDB();
 
@@ -18,10 +17,13 @@ app.use(express.json());
 const authRoutes = require('./routes/authRoutes');
 const bookingRoutes = require('./routes/bookingRoutes');
 const hotelRoutes = require('./routes/hotelRoutes');
+const reviewRoutes = require('./routes/reviewRoutes');
+
 // Use routes
 app.use('/auth', authRoutes);
 app.use('/bookings', bookingRoutes);
 app.use('/hotels', hotelRoutes);
+app.use('/review',reviewRoutes);
 
 // Start the server
 const PORT = process.env.PORT || 3000;
