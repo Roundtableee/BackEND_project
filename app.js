@@ -1,12 +1,11 @@
-// app.js
-
-require('dotenv').config({ path: './config/config.env' });
-
 const express = require('express');
 const cors = require('cors');
 const connectDB = require('./config/db');
 
-// Connect to MongoDB Atlas
+// Load environment variables
+require('dotenv').config({ path: './config/config.env' });
+
+// Connect to MongoDB
 connectDB();
 
 const app = express();
@@ -23,7 +22,7 @@ const reviewRoutes = require('./routes/reviewRoutes');
 app.use('/auth', authRoutes);
 app.use('/bookings', bookingRoutes);
 app.use('/hotels', hotelRoutes);
-app.use('/review',reviewRoutes);
+app.use('/reviews', reviewRoutes);
 
 // Start the server
 const PORT = process.env.PORT || 3000;
