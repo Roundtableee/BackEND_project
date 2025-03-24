@@ -1,9 +1,9 @@
 // controllers/authController.js
+
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const User = require('../models/user');
 
-// controllers/authController.js
 exports.register = async (req, res) => {
   try {
     const { name, phone, email, password, role } = req.body;
@@ -17,8 +17,9 @@ exports.register = async (req, res) => {
     // Hash the password before storing it
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Ensure role defaults to "user" unless specified otherwise (only allow admin role if predefined condition met)
-    const userRole = role === 'admin' ? 'admin' : 'user';
+    // Ensure role defaults to "user" unless specified otherwise
+    // (only allow admin if there's some condition. For now, just check if role==='admin')
+    const userRole = (role === 'admin') ? 'admin' : 'user';
 
     // Create new user in the database
     const newUser = new User({
@@ -26,18 +27,17 @@ exports.register = async (req, res) => {
       phone,
       email,
       password: hashedPassword,
-      role: userRole
+      role: userRole,
     });
 
     await newUser.save();
 
-    res.status(201).json({ message: 'User registered successfully' });
+    return res.status(201).json({ message: 'User registered successfully' });
   } catch (error) {
     console.error('Registration error:', error);
-    res.status(500).json({ message: 'Server error' });
+    return res.status(500).json({ message: 'Server error' });
   }
 };
-
 
 exports.login = async (req, res) => {
   try {
@@ -62,25 +62,35 @@ exports.login = async (req, res) => {
       { expiresIn: '1h' }
     );
 
-    res.json({ token });
+    // ส่ง token + user (แยก password ออก)
+    // ถ้าคุณต้องการ field อื่น เช่น name, phone, etc. สามารถเพิ่มได้
+    return res.json({
+      token,
+      user: {
+        _id: user._id,
+        name: user.name,
+        phone: user.phone,
+        email: user.email,
+        role: user.role,
+      },
+    });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: 'Server error' });
+    return res.status(500).json({ message: 'Server error' });
   }
 };
 
 exports.logout = (req, res) => {
-
   return res.json({ message: 'Logged out successfully.' });
 };
 
 exports.getAllUsers = async (req, res) => {
   try {
     const users = await User.find().select('-password');
-    res.status(200).json(users);
+    return res.status(200).json(users);
   } catch (error) {
     console.error('Error fetching users:', error);
-    res.status(500).json({ message: 'Server error' });
+    return res.status(500).json({ message: 'Server error' });
   }
 };
 
@@ -90,9 +100,9 @@ exports.getSingleUser = async (req, res) => {
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
-    res.status(200).json(user);
+    return res.status(200).json(user);
   } catch (error) {
     console.error('Error fetching user:', error);
-    res.status(500).json({ message: 'Server error' });
+    return res.status(500).json({ message: 'Server error' });
   }
 };
