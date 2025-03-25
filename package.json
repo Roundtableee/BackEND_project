@@ -4,8 +4,10 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "nodemon app.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "nodemon app.js",                      
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "echo \"No build step for this project.\"", 
+    "start": "node server.js"                     
   },
   "keywords": [],
   "author": "",
