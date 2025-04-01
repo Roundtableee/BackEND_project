@@ -1,6 +1,41 @@
+const mongoose = require('mongoose');
 const Review = require('../models/review');
 const Hotel = require('../models/hotel');
 const User = require('../models/user');
+
+/**
+ * Helper function: Calculate the average rating and total reviews for a hotel
+ * and update the hotel document accordingly.
+ */
+async function updateHotelRating(hotelId) {
+  try {
+    const stats = await Review.aggregate([
+      { $match: { hotelId: new mongoose.Types.ObjectId(hotelId) } },
+      {
+        $group: {
+          _id: "$hotelId",
+          avgRating: { $avg: "$rating" },
+          totalReviews: { $sum: 1 }
+        }
+      }
+    ]);
+    console.log("Aggregation stats:", stats);
+    if (stats.length > 0) {
+      await Hotel.findByIdAndUpdate(hotelId, {
+        averageRating: stats[0].avgRating,
+        totalReviews: stats[0].totalReviews
+      });
+    } else {
+      await Hotel.findByIdAndUpdate(hotelId, {
+        averageRating: 0,
+        totalReviews: 0
+      });
+    }
+  } catch (error) {
+    console.error("Error updating hotel rating:", error);
+  }
+}
+
 
 // 1. Create a review
 exports.createReview = async (req, res) => {
@@ -23,6 +58,9 @@ exports.createReview = async (req, res) => {
     });
     await newReview.save();
 
+    // Update the hotel's average rating and total reviews
+    await updateHotelRating(hotelId);
+
     res.status(201).json({ message: 'Review created', review: newReview });
   } catch (error) {
     console.error(error);
@@ -34,14 +72,10 @@ exports.createReview = async (req, res) => {
 exports.getAllReviews = async (req, res) => {
   try {
     const { hotelId } = req.params;
-
-    // Log the hotelId for debugging
     console.log(`Fetching reviews for hotelId: ${hotelId}`);
 
-    // Retrieve reviews for the hotel
+    // Retrieve reviews for the hotel and populate user name
     const reviews = await Review.find({ hotelId }).populate('userId', 'name');
-
-    // Log the retrieved reviews for debugging
     console.log(`Retrieved reviews: ${JSON.stringify(reviews)}`);
 
     res.json(reviews);
@@ -56,7 +90,7 @@ exports.getReviewById = async (req, res) => {
   try {
     const { id } = req.params;
 
-    // Find the review by ID
+    // Find the review by ID and populate the user's name
     const review = await Review.findById(id).populate('userId', 'name');
     if (!review) {
       return res.status(404).json({ message: 'Review not found.' });
@@ -86,11 +120,15 @@ exports.updateReview = async (req, res) => {
       return res.status(403).json({ message: 'Not authorized to update this review.' });
     }
 
-    // Update relevant fields
+    // Update fields if provided
     if (rating !== undefined) review.rating = rating;
     if (comment !== undefined) review.comment = comment;
 
     await review.save();
+
+    // Update the hotel's average rating and total reviews after the review update
+    await updateHotelRating(review.hotelId);
+
     res.json({ message: 'Review updated', review });
   } catch (error) {
     console.error(error);
@@ -115,6 +153,10 @@ exports.deleteReview = async (req, res) => {
     }
 
     await review.deleteOne();
+
+    // Update the hotel's review statistics after deletion
+    await updateHotelRating(review.hotelId);
+
     res.json({ message: 'Review deleted.' });
   } catch (error) {
     console.error(error);
