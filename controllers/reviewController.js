@@ -71,19 +71,19 @@ exports.createReview = async (req, res) => {
 // 2. Get all reviews for a hotel
 exports.getAllReviews = async (req, res) => {
   try {
-    const { hotelId } = req.params;
+    const { hotelId } = req.query;
+    if (!hotelId) {
+      return res.status(400).json({ message: 'hotelId is required as a query parameter.' });
+    }
     console.log(`Fetching reviews for hotelId: ${hotelId}`);
-
-    // Retrieve reviews for the hotel and populate user name
     const reviews = await Review.find({ hotelId }).populate('userId', 'name');
     console.log(`Retrieved reviews: ${JSON.stringify(reviews)}`);
-
     res.json(reviews);
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error' });
   }
-};
+}
 
 // 3. Get a review by ID
 exports.getReviewById = async (req, res) => {
